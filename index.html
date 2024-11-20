@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swipe Feedback Prototype</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+
+        #game-container {
+            position: relative;
+            width: 300px;
+            height: 500px;
+            background-color: white;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .target {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            border-radius: 50%;
+        }
+
+        .ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: blue;
+            border-radius: 50%;
+            bottom: 20px;
+            left: calc(50% - 10px);
+        }
+
+        #power-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background-color: lightgray;
+        }
+
+        #power-level {
+            width: 0%;
+            height: 100%;
+            background-color: green;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="target" class="target"></div>
+        <div id="ball" class="ball"></div>
+        <div id="power-bar">
+            <div id="power-level"></div>
+        </div>
+    </div>
+    <div id="result">Swipe the ball to hit the target!</div>
+
+    <script>
+        const target = document.getElementById('target');
+        const ball = document.getElementById('ball');
+        const result = document.getElementById('result');
+        const powerBar = document.getElementById('power-bar');
+        const powerLevel = document.getElementById('power-level');
+
+        let startX = 0, startY = 0, isSwiping = false;
+
+        // Randomly position the target
+        function positionTarget() {
+            const container = document.getElementById('game-container');
+            const targetSize = target.offsetWidth;
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+
+            const x = Math.random() * (containerWidth - targetSize);
+            const y = Math.random() * (containerHeight - 200); // Keep it above the ball
+
+            target.style.left = `${x}px`;
+            target.style.top = `${y}px`;
+        }
+
+        positionTarget();
+
+        // Start swiping
+        ball.addEventListener('mousedown', (e) => {
+            startX = e.clientX;
+            startY = e.clientY;
+            isSwiping = true;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isSwiping) return;
+
+            const deltaX = e.clientX - startX;
+            const deltaY = startY - e.clientY; // Reverse Y-axis
+            const swipeDistance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+
+            // Update power gauge based on swipe distance
+            const power = Math.min(100, swipeDistance / 2); // Normalize to 100%
+            powerLevel.style.width = `${power}%`;
+
+            ball.style.transform = `translate(${deltaX}px, ${-deltaY}px)`;
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!isSwiping) return;
+            isSwiping = false;
+
+            const deltaX = e.clientX - startX;
+            const deltaY = startY - e.clientY; // Reverse Y-axis
+            const swipeDistance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+
+            const targetRect = target.getBoundingClientRect();
+            const ballRect = ball.getBoundingClientRect();
+
+            const ballCenterX = ballRect.left + ballRect.width / 2;
+            const ballCenterY = ballRect.top + ballRect.height / 2;
+
+            const targetCenterX = targetRect.left + targetRect.width / 2;
+            const targetCenterY = targetRect.top + targetRect.height / 2;
+
+            const distanceToTarget = Math.sqrt(
+                (ballCenterX - targetCenterX) ** 2 + (ballCenterY - targetCenterY) ** 2
+            );
+
+            // Reset ball position and power gauge
+            ball.style.transform = 'translate(0, 0)';
+            powerLevel.style.width = '0%';
+
+            if (distanceToTarget < target.offsetWidth / 2) {
+                result.textContent = 'Hit! Great job!';
+                positionTarget();
+            } else {
+                result.textContent = `Miss! Distance: ${distanceToTarget.toFixed(2)}px`;
+            }
+
+            console.log(`Swipe Distance: ${swipeDistance}px, Distance to Target: ${distanceToTarget}px`);
+        });
+    </script>
+</body>
+</html>
